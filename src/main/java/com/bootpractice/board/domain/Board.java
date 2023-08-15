@@ -16,12 +16,13 @@ public class Board {
     private Long id;
     private String title;
     private String content;
-    @Column(name = "user_id")
-    private String userId;
     @CreationTimestamp
     @Column(name = "regist_date")
     private LocalDateTime registDate;
     @UpdateTimestamp
     @Column(name = "update_date")
     private LocalDateTime updateDate;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private Member member;
 }
