@@ -36,4 +36,15 @@ public class Member {
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Board> boards = new ArrayList<>();
+
+    public Member() {
+    }
+
+    public Member(String email, String username, String nickname, String password) {
+        this.email = email;
+        this.username = username;
+        this.nickname = nickname;
+        this.password = password;
+    }
+
 }

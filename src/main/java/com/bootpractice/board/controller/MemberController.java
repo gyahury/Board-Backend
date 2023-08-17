@@ -1,10 +1,16 @@
 package com.bootpractice.board.controller;
 
 import com.bootpractice.board.domain.Member;
+import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.service.MemberService;
 import io.swagger.annotations.Api;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -20,8 +26,20 @@ public class MemberController {
     }
 
     @PostMapping("/join")
-    public Member createMember(@RequestBody Member member) {
-        return memberService.saveMember(member);
+    public ResponseEntity<?> joinMember(@Valid @RequestBody MemberJoinDto memberDto, BindingResult result) {
+
+        if (result.hasErrors()) {
+            // 에러의 첫번째 메세지 반환
+            String firstErrorMessage = result.getAllErrors().get(0).getDefaultMessage();
+
+            return ResponseEntity.badRequest()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8")
+                    .body(firstErrorMessage);
+        }
+
+        Member joinMember = memberService.saveMember(memberDto);
+
+        return ResponseEntity.ok(joinMember);
     }
 
     @GetMapping

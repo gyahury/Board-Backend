@@ -1,6 +1,7 @@
 package com.bootpractice.board.service;
 
 import com.bootpractice.board.domain.Member;
+import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
 import com.bootpractice.board.repository.MemberRepository;
@@ -20,7 +21,9 @@ public class MemberService {
         this.memberRepository = memberRepository;
     }
 
-    public Member saveMember(Member member) {
+    public Member saveMember(MemberJoinDto memberDto) {
+        Member member = memberDto.toEntity();
+
         Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
 
         // 이메일 중복 체크
