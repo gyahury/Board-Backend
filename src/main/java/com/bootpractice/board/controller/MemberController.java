@@ -29,7 +29,7 @@ public class MemberController {
     public ResponseEntity<?> joinMember(@Valid @RequestBody MemberJoinDto memberDto, BindingResult result) {
 
         if (result.hasErrors()) {
-            // 에러의 첫번째 메세지 반환
+            // 유효성 검사 에러의 첫번째 메세지 반환
             String firstErrorMessage = result.getAllErrors().get(0).getDefaultMessage();
 
             return ResponseEntity.badRequest()

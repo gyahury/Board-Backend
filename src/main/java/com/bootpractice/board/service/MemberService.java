@@ -6,6 +6,7 @@ import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
 import com.bootpractice.board.repository.MemberRepository;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -17,12 +18,21 @@ import java.util.Optional;
 public class MemberService {
     private final MemberRepository memberRepository;
 
-    public MemberService(MemberRepository memberRepository) {
+    private final PasswordEncoder passwordEncoder;
+
+    // 생성자 주입
+    public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Member saveMember(MemberJoinDto memberDto) {
         Member member = memberDto.toEntity();
+
+        // 비밀번호 암호화
+        String rawPassword = member.getPassword();
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+        member.setPassword(encodedPassword);
 
         Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
 
