@@ -1,11 +1,15 @@
 package com.bootpractice.board.service;
 
 import com.bootpractice.board.domain.Member;
+import com.bootpractice.board.exception.EmailAlreadyExistsException;
+import com.bootpractice.board.exception.MemberNotFoundException;
 import com.bootpractice.board.repository.MemberRepository;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -17,10 +21,46 @@ public class MemberService {
     }
 
     public Member saveMember(Member member) {
+        Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
+
+        // 이메일 중복 체크
+        if (existingMember.isPresent()) {
+            throw new EmailAlreadyExistsException();
+        }
+
         return memberRepository.save(member);
     }
 
     public List<Member> findAllMembers() {
         return memberRepository.findAll();
+    }
+
+    public Member findMemberById(Long id) {
+        return memberRepository.findById(id).orElse(null);
+    }
+
+    public Member updateMember(Member member) {
+
+        Optional<Member> existingMember = memberRepository.findById(member.getId());
+        if (existingMember.isPresent()) {
+            Member updateMember = existingMember.get();
+            updateMember.setEmail(member.getEmail());
+            updateMember.setUsername(member.getUsername());
+            updateMember.setNickname(member.getNickname());
+            updateMember.setPassword(member.getPassword());
+            return memberRepository.save(updateMember);
+        } else {
+            throw new MemberNotFoundException();
+        }
+
+
+    }
+
+    public void deleteMember(Long id) {
+        try {
+            memberRepository.deleteById(id);
+        } catch(EmptyResultDataAccessException e) {
+            throw new MemberNotFoundException();
+        }
     }
 }
