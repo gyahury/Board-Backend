@@ -5,6 +5,8 @@ import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
 import com.bootpractice.board.repository.MemberRepository;
+import com.bootpractice.board.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -75,5 +77,17 @@ public class MemberService {
         } catch(EmptyResultDataAccessException e) {
             throw new MemberNotFoundException();
         }
+    }
+
+    @Value("${jwt.secret}")
+    private String secretkey;
+
+    private Long expiredMs = 1000 * 60 * 60l; // 60분
+
+    public String loginMember(String username, String password){
+
+        // 인증과정 작성
+
+        return JwtUtil.createJwt(username, secretkey, expiredMs);
     }
 }
