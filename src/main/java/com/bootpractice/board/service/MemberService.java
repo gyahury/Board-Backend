@@ -84,10 +84,10 @@ public class MemberService {
 
     private Long expiredMs = 1000 * 60 * 60l; // 60분
 
-    public String loginMember(String username, String password){
+    public String loginMember(MemberJoinDto memberJoinDto){
 
         // 인증과정 작성
 
-        return JwtUtil.createJwt(username, secretkey, expiredMs);
+        return JwtUtil.createJwt(memberJoinDto.getUsername(), secretkey, expiredMs);
     }
 }

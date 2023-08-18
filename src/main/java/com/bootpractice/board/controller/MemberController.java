@@ -64,8 +64,8 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginMember(){
-        return ResponseEntity.ok().body(memberService.loginMember("",""));
+    public ResponseEntity<String> loginMember(@RequestBody MemberJoinDto memberDto){
+        return ResponseEntity.ok().body(memberService.loginMember(memberDto));
     }
 
 
