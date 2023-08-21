@@ -2,6 +2,7 @@ package com.bootpractice.board.controller;
 
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.MemberJoinDto;
+import com.bootpractice.board.dto.MemberLoginDto;
 import com.bootpractice.board.service.MemberService;
 import io.swagger.annotations.Api;
 import org.springframework.http.HttpHeaders;
@@ -64,8 +65,8 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginMember(@RequestBody MemberJoinDto memberDto){
-        return ResponseEntity.ok().body(memberService.loginMember(memberDto));
+    public ResponseEntity<String> loginMember(@RequestBody MemberLoginDto memberLoginDto){
+        return ResponseEntity.ok().body(memberService.loginMember(memberLoginDto));
     }
 
 
