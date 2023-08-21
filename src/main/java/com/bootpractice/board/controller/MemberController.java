@@ -63,4 +63,10 @@ public class MemberController {
         memberService.deleteMember(id);
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<String> loginMember(@RequestBody MemberJoinDto memberDto){
+        return ResponseEntity.ok().body(memberService.loginMember(memberDto));
+    }
+
+
 }
