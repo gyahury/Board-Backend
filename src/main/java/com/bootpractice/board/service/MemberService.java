@@ -2,12 +2,14 @@ package com.bootpractice.board.service;
 
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.MemberJoinDto;
+import com.bootpractice.board.dto.MemberLoginDto;
 import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
 import com.bootpractice.board.repository.MemberRepository;
 import com.bootpractice.board.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -84,10 +86,25 @@ public class MemberService {
 
     private Long expiredMs = 1000 * 60 * 60l; // 60분
 
-    public String loginMember(MemberJoinDto memberJoinDto){
+    public String loginMember(MemberLoginDto memberLoginDto){
 
-        // 인증과정 작성
+        Optional<Member> existingMember = memberRepository.findByEmail(memberLoginDto.getEmail());
 
-        return JwtUtil.createJwt(memberJoinDto.getUsername(), secretkey, expiredMs);
+        if (existingMember.isPresent()) {
+            Member member = existingMember.get();
+
+            if (passwordEncoder.matches(memberLoginDto.getPassword(), member.getPassword())) {
+                String email = member.getEmail();
+                String username = member.getUsername();
+
+                return JwtUtil.createJwt(email, username, secretkey, expiredMs);
+            } else {
+                throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            }
+
+        } else {
+            throw new MemberNotFoundException();
+        }
+
     }
 }
