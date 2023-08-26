@@ -56,6 +56,10 @@ public class MemberService {
         return memberRepository.findById(id).orElse(null);
     }
 
+    public Member findMemberByEmail(String email) {
+        return memberRepository.findByEmail(email).orElse(null);
+    }
+
     public Member updateMember(Member member) {
 
         Optional<Member> existingMember = memberRepository.findById(member.getId());
@@ -84,7 +88,7 @@ public class MemberService {
     @Value("${jwt.secret}")
     private String secretkey;
 
-    private Long expiredMs = 1000 * 60 * 60l; // 60분
+    private final Long expiredMs = 1000 * 60 * 60L; // 60분
 
     public String loginMember(MemberLoginDto memberLoginDto){
 

@@ -1,5 +1,6 @@
 package com.bootpractice.board.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -29,6 +30,15 @@ public class Board {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonBackReference
     private Member member;
 
+    public Board(String title, String content){
+        this.title = title;
+        this.content = content;
+    }
+
+    public Board() {
+
+    }
 }
