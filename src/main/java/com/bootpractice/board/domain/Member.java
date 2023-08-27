@@ -2,6 +2,7 @@ package com.bootpractice.board.domain;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Data;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +13,7 @@ import java.util.List;
 
 @Entity
 @Data
+@ToString(exclude = "boards")
 @Table(name = "members")
 public class Member {
     @Id
