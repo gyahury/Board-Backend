@@ -3,6 +3,7 @@ package com.bootpractice.board.service;
 import com.bootpractice.board.domain.Board;
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.BoardCreateDto;
+import com.bootpractice.board.exception.BoardNotFoundException;
 import com.bootpractice.board.repository.BoardRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -41,7 +42,7 @@ public class BoardService {
     }
 
     public Board updateBoard(Long id, Board updatedBoard) {
-        Board board = boardRepository.findById(id).orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
+        Board board = boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException());
         board.setTitle(updatedBoard.getTitle());
         board.setContent(updatedBoard.getContent());
         return boardRepository.save(board);
