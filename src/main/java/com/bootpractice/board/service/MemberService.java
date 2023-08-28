@@ -3,8 +3,10 @@ package com.bootpractice.board.service;
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.dto.MemberLoginDto;
+import com.bootpractice.board.dto.MemberUpdateDto;
 import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
+import com.bootpractice.board.exception.UserMismatchException;
 import com.bootpractice.board.repository.MemberRepository;
 import com.bootpractice.board.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +14,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -20,30 +23,29 @@ import java.util.Optional;
 @Service
 @Transactional
 public class MemberService {
-    private final MemberRepository memberRepository;
 
+    @Value("${jwt.secret}")
+    private String secretkey;
+    private final Long expiredMs = 1000 * 60 * 60L; // 60분
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 생성자 주입
     public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Member saveMember(MemberJoinDto memberDto) {
-        Member member = memberDto.toEntity();
-
-        // 비밀번호 암호화
-        String rawPassword = member.getPassword();
-        String encodedPassword = passwordEncoder.encode(rawPassword);
-        member.setPassword(encodedPassword);
+    public Member saveMember(MemberJoinDto memberJoinDto) {
+        Member member = memberJoinDto.toEntity();
 
         Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
-
-        // 이메일 중복 체크
         if (existingMember.isPresent()) {
             throw new EmailAlreadyExistsException();
         }
+
+        String rawPassword = member.getPassword();
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+        member.setPassword(encodedPassword);
 
         return memberRepository.save(member);
     }
@@ -53,61 +55,56 @@ public class MemberService {
     }
 
     public Member findMemberById(Long id) {
-        return memberRepository.findById(id).orElse(null);
+        return memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException());
     }
 
     public Member findMemberByEmail(String email) {
-        return memberRepository.findByEmail(email).orElse(null);
+        return memberRepository.findByEmail(email).orElseThrow(() -> new MemberNotFoundException());
     }
 
-    public Member updateMember(Member member) {
+    public String updateMember(MemberUpdateDto memberUpdateDto, String bearerToken) {
 
-        Optional<Member> existingMember = memberRepository.findById(member.getId());
-        if (existingMember.isPresent()) {
-            Member updateMember = existingMember.get();
-            updateMember.setEmail(member.getEmail());
-            updateMember.setUsername(member.getUsername());
-            updateMember.setNickname(member.getNickname());
-            updateMember.setPassword(member.getPassword());
-            return memberRepository.save(updateMember);
-        } else {
-            throw new MemberNotFoundException();
+        String token = bearerToken.split(" ")[1];
+        String tokenEmail = JwtUtil.getEmail(token, secretkey);
+
+        Member member = memberRepository.findById(memberUpdateDto.getId()).orElseThrow(() -> new MemberNotFoundException());
+
+        Optional<Member> existingEmail = memberRepository.findByEmail(memberUpdateDto.getEmail());
+        if (existingEmail.isPresent()) {
+            throw new EmailAlreadyExistsException();
         }
 
+        if(tokenEmail.equals(member.getEmail())){
+            member.setEmail(memberUpdateDto.getEmail());
+            member.setUsername(memberUpdateDto.getUsername());
+            member.setNickname(memberUpdateDto.getNickname());
+
+            String rawPassword = memberUpdateDto.getPassword();
+            String encodedPassword = passwordEncoder.encode(rawPassword);
+            member.setPassword(encodedPassword);
+
+            memberRepository.save(member);
+
+            return JwtUtil.createJwt(member.getEmail(), member.getUsername(), secretkey, expiredMs);
+        }else{
+            throw new UserMismatchException();
+        }
 
     }
 
     public void deleteMember(Long id) {
-        try {
-            memberRepository.deleteById(id);
-        } catch(EmptyResultDataAccessException e) {
-            throw new MemberNotFoundException();
-        }
+        memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException());
+        memberRepository.deleteById(id);
     }
-
-    @Value("${jwt.secret}")
-    private String secretkey;
-
-    private final Long expiredMs = 1000 * 60 * 60L; // 60분
 
     public String loginMember(MemberLoginDto memberLoginDto){
 
-        Optional<Member> existingMember = memberRepository.findByEmail(memberLoginDto.getEmail());
+        Member existingMember = memberRepository.findByEmail(memberLoginDto.getEmail()).orElseThrow(() -> new MemberNotFoundException());
 
-        if (existingMember.isPresent()) {
-            Member member = existingMember.get();
-
-            if (passwordEncoder.matches(memberLoginDto.getPassword(), member.getPassword())) {
-                String email = member.getEmail();
-                String username = member.getUsername();
-
-                return JwtUtil.createJwt(email, username, secretkey, expiredMs);
-            } else {
-                throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
-            }
-
+        if (passwordEncoder.matches(memberLoginDto.getPassword(), existingMember.getPassword())) {
+            return JwtUtil.createJwt(existingMember.getEmail(), existingMember.getUsername(), secretkey, expiredMs);
         } else {
-            throw new MemberNotFoundException();
+            throw new BadCredentialsException("email or password is incorrect");
         }
 
     }
