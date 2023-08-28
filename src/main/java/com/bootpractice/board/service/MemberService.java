@@ -54,7 +54,7 @@ public class MemberService {
     }
 
     public Member findMemberById(Long id) {
-        return memberRepository.findById(id).orElse(null);
+        return memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException());
     }
 
     public Member findMemberByEmail(String email) {
@@ -96,11 +96,8 @@ public class MemberService {
     }
 
     public void deleteMember(Long id) {
-        try {
-            memberRepository.deleteById(id);
-        } catch(EmptyResultDataAccessException e) {
-            throw new MemberNotFoundException();
-        }
+        memberRepository.findById(id).orElseThrow(() -> new MemberNotFoundException());
+        memberRepository.deleteById(id);
     }
 
     @Value("${jwt.secret}")
@@ -110,22 +107,12 @@ public class MemberService {
 
     public String loginMember(MemberLoginDto memberLoginDto){
 
-        Optional<Member> existingMember = memberRepository.findByEmail(memberLoginDto.getEmail());
+        Member existingMember = memberRepository.findByEmail(memberLoginDto.getEmail()).orElseThrow(() -> new MemberNotFoundException());
 
-        if (existingMember.isPresent()) {
-            Member member = existingMember.get();
-
-            if (passwordEncoder.matches(memberLoginDto.getPassword(), member.getPassword())) {
-                String email = member.getEmail();
-                String username = member.getUsername();
-
-                return JwtUtil.createJwt(email, username, secretkey, expiredMs);
-            } else {
-                throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
-            }
-
+        if (passwordEncoder.matches(memberLoginDto.getPassword(), existingMember.getPassword())) {
+            return JwtUtil.createJwt(existingMember.getEmail(), existingMember.getUsername(), secretkey, expiredMs);
         } else {
-            throw new MemberNotFoundException();
+            throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
     }
