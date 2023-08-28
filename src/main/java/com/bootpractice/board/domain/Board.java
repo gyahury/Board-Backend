@@ -33,12 +33,6 @@ public class Board {
     @JsonBackReference
     private Member member;
 
-    public Board(String title, String content){
-        this.title = title;
-        this.content = content;
-    }
-
     public Board() {
-
     }
 }

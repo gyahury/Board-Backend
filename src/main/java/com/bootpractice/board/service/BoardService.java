@@ -3,8 +3,13 @@ package com.bootpractice.board.service;
 import com.bootpractice.board.domain.Board;
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.BoardCreateDto;
+import com.bootpractice.board.dto.BoardUpdateDto;
 import com.bootpractice.board.exception.BoardNotFoundException;
+import com.bootpractice.board.exception.MemberNotFoundException;
+import com.bootpractice.board.exception.UserMismatchException;
 import com.bootpractice.board.repository.BoardRepository;
+import com.bootpractice.board.repository.MemberRepository;
+import com.bootpractice.board.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,38 +22,68 @@ import java.util.Optional;
 @Transactional
 public class BoardService {
 
-    private final BoardRepository boardRepository;
+    @Value("${jwt.secret}")
+    private String secretkey;
 
-    public BoardService(BoardRepository boardRepository) {
+    private final BoardRepository boardRepository;
+    private final MemberService memberService;
+
+    public BoardService(BoardRepository boardRepository, MemberService memberService) {
         this.boardRepository = boardRepository;
+        this.memberService = memberService;
     }
 
-    public Board createBoard(BoardCreateDto boardCreateDto, Member member) {
+    public void createBoard(BoardCreateDto boardCreateDto, String bearerToken) {
+
+        String token = bearerToken.split(" ")[1];
+        String email = JwtUtil.getEmail(token, secretkey);
+
+        Member member = memberService.findMemberByEmail(email);
 
         Board board = new Board();
         board.setTitle(boardCreateDto.getTitle());
         board.setContent(boardCreateDto.getContent());
         board.setMember(member);
 
-        return boardRepository.save(board);
+        boardRepository.save(board);
     }
 
-    public Page<Board> getBoards(Pageable pageable) {
+    public Page<Board> getAllBoards(Pageable pageable) {
         return boardRepository.findAll(pageable);
     }
 
-    public Optional<Board> getBoardById(Long id) {
-        return boardRepository.findById(id);
+    public Board getBoardById(Long id) {
+        return boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException());
     }
 
-    public Board updateBoard(Long id, Board updatedBoard) {
+    public void updateBoard(Long id, BoardUpdateDto boardUpdateDto, String bearerToken) {
+
+        String token = bearerToken.split(" ")[1];
+        String tokenEmail = JwtUtil.getEmail(token, secretkey);
+
         Board board = boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException());
-        board.setTitle(updatedBoard.getTitle());
-        board.setContent(updatedBoard.getContent());
-        return boardRepository.save(board);
+
+        if(tokenEmail.equals(board.getMember().getEmail())){
+            board.setTitle(boardUpdateDto.getTitle());
+            board.setContent(boardUpdateDto.getContent());
+            boardRepository.save(board);
+        }else{
+            throw new UserMismatchException();
+        }
+
     }
 
-    public void deleteBoard(Long id) {
-        boardRepository.deleteById(id);
+    public void deleteBoard(Long id, String bearerToken) {
+
+        String token = bearerToken.split(" ")[1];
+        String tokenEmail = JwtUtil.getEmail(token, secretkey);
+
+        Board board = boardRepository.findById(id).orElseThrow(() -> new BoardNotFoundException());
+
+        if(tokenEmail.equals(board.getMember().getEmail())){
+            boardRepository.deleteById(id);
+        }else{
+            throw new UserMismatchException();
+        }
     }
 }

@@ -1,6 +1,8 @@
 package com.bootpractice.board.utils;
 
+import com.bootpractice.board.domain.Board;
 import com.bootpractice.board.domain.Member;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
@@ -38,6 +40,22 @@ public class ResponseUtil {
         response.put("message", message);
         response.put("status", "success");
         response.put("data", memberList);
+        return ResponseEntity.ok().body(response);
+    }
+
+    public static ResponseEntity<Map<String, Object>> successMessage(String message, Page<Board> boardList) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", message);
+        response.put("status", "success");
+        response.put("data", boardList);
+        return ResponseEntity.ok().body(response);
+    }
+
+    public static ResponseEntity<Map<String, Object>> successMessage(String message, Board board) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", message);
+        response.put("status", "success");
+        response.put("data", board);
         return ResponseEntity.ok().body(response);
     }
 

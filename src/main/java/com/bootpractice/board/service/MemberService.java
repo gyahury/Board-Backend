@@ -14,6 +14,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -22,11 +23,13 @@ import java.util.Optional;
 @Service
 @Transactional
 public class MemberService {
-    private final MemberRepository memberRepository;
 
+    @Value("${jwt.secret}")
+    private String secretkey;
+    private final Long expiredMs = 1000 * 60 * 60L; // 60분
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 생성자 주입
     public MemberService(MemberRepository memberRepository, PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.passwordEncoder = passwordEncoder;
@@ -35,13 +38,11 @@ public class MemberService {
     public Member saveMember(MemberJoinDto memberJoinDto) {
         Member member = memberJoinDto.toEntity();
 
-        // 이메일 중복 체크
         Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
         if (existingMember.isPresent()) {
             throw new EmailAlreadyExistsException();
         }
 
-        // 비밀번호 암호화
         String rawPassword = member.getPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
         member.setPassword(encodedPassword);
@@ -58,7 +59,7 @@ public class MemberService {
     }
 
     public Member findMemberByEmail(String email) {
-        return memberRepository.findByEmail(email).orElse(null);
+        return memberRepository.findByEmail(email).orElseThrow(() -> new MemberNotFoundException());
     }
 
     public String updateMember(MemberUpdateDto memberUpdateDto, String bearerToken) {
@@ -66,29 +67,25 @@ public class MemberService {
         String token = bearerToken.split(" ")[1];
         String tokenEmail = JwtUtil.getEmail(token, secretkey);
 
-        // 회원 존재 여부 체크
-        Member existingMember = memberRepository.findById(memberUpdateDto.getId()).orElseThrow(() -> new MemberNotFoundException());
+        Member member = memberRepository.findById(memberUpdateDto.getId()).orElseThrow(() -> new MemberNotFoundException());
 
-        // 이메일 중복 여부 체크
-        Optional<Member> existingEmailMember = memberRepository.findByEmail(memberUpdateDto.getEmail());
-        if (existingEmailMember.isPresent()) {
+        Optional<Member> existingEmail = memberRepository.findByEmail(memberUpdateDto.getEmail());
+        if (existingEmail.isPresent()) {
             throw new EmailAlreadyExistsException();
         }
 
-        // 토큰 이메일과 업데이트될 이메일 비교
-        if(tokenEmail.equals(existingMember.getEmail())){
-            existingMember.setEmail(memberUpdateDto.getEmail());
-            existingMember.setUsername(memberUpdateDto.getUsername());
-            existingMember.setNickname(memberUpdateDto.getNickname());
+        if(tokenEmail.equals(member.getEmail())){
+            member.setEmail(memberUpdateDto.getEmail());
+            member.setUsername(memberUpdateDto.getUsername());
+            member.setNickname(memberUpdateDto.getNickname());
 
-            // 비밀번호 암호화
             String rawPassword = memberUpdateDto.getPassword();
             String encodedPassword = passwordEncoder.encode(rawPassword);
-            existingMember.setPassword(encodedPassword);
+            member.setPassword(encodedPassword);
 
-            memberRepository.save(existingMember);
+            memberRepository.save(member);
 
-            return JwtUtil.createJwt(existingMember.getEmail(), existingMember.getUsername(), secretkey, expiredMs);
+            return JwtUtil.createJwt(member.getEmail(), member.getUsername(), secretkey, expiredMs);
         }else{
             throw new UserMismatchException();
         }
@@ -100,11 +97,6 @@ public class MemberService {
         memberRepository.deleteById(id);
     }
 
-    @Value("${jwt.secret}")
-    private String secretkey;
-
-    private final Long expiredMs = 1000 * 60 * 60L; // 60분
-
     public String loginMember(MemberLoginDto memberLoginDto){
 
         Member existingMember = memberRepository.findByEmail(memberLoginDto.getEmail()).orElseThrow(() -> new MemberNotFoundException());
@@ -112,7 +104,7 @@ public class MemberService {
         if (passwordEncoder.matches(memberLoginDto.getPassword(), existingMember.getPassword())) {
             return JwtUtil.createJwt(existingMember.getEmail(), existingMember.getUsername(), secretkey, expiredMs);
         } else {
-            throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new BadCredentialsException("email or password is incorrect");
         }
 
     }
