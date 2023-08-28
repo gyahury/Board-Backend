@@ -9,18 +9,18 @@ import javax.validation.constraints.Size;
 
 @Data
 public class MemberJoinDto {
-    @NotBlank(message = "이메일은 필수입니다.")
-    @Email(message = "유효한 이메일 형식이어야 합니다.")
+    @NotBlank(message = "email is required")
+    @Email(message = "It must be in a valid email format")
     private String email;
 
-    @NotBlank(message = "사용자 이름은 필수입니다.")
+    @NotBlank(message = "username is required")
     private String username;
 
-    @NotBlank(message = "닉네임은 필수입니다.")
+    @NotBlank(message = "nickname is required")
     private String nickname;
 
-    @NotBlank(message = "비밀번호는 필수입니다.")
-    @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.")
+    @NotBlank(message = "password is required")
+    @Size(min = 8, message = "password must be at least 8 characters")
     private String password;
 
     public Member toEntity() {

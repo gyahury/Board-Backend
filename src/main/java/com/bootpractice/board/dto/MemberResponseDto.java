@@ -5,13 +5,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class BoardResponseDto {
+public class MemberResponseDto {
     private Long id;
-    private String title;
-    private String content;
-    private LocalDateTime registDate;
-    private LocalDateTime updateDate;
     private String email;
     private String username;
+    private String nickname;
+    private LocalDateTime registDate;
+    private LocalDateTime updateDate;
 
 }

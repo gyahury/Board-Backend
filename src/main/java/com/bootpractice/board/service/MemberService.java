@@ -3,8 +3,10 @@ package com.bootpractice.board.service;
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.dto.MemberLoginDto;
+import com.bootpractice.board.dto.MemberUpdateDto;
 import com.bootpractice.board.exception.EmailAlreadyExistsException;
 import com.bootpractice.board.exception.MemberNotFoundException;
+import com.bootpractice.board.exception.UserMismatchException;
 import com.bootpractice.board.repository.MemberRepository;
 import com.bootpractice.board.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,20 +32,19 @@ public class MemberService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Member saveMember(MemberJoinDto memberDto) {
-        Member member = memberDto.toEntity();
+    public Member saveMember(MemberJoinDto memberJoinDto) {
+        Member member = memberJoinDto.toEntity();
+
+        // 이메일 중복 체크
+        Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
+        if (existingMember.isPresent()) {
+            throw new EmailAlreadyExistsException();
+        }
 
         // 비밀번호 암호화
         String rawPassword = member.getPassword();
         String encodedPassword = passwordEncoder.encode(rawPassword);
         member.setPassword(encodedPassword);
-
-        Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
-
-        // 이메일 중복 체크
-        if (existingMember.isPresent()) {
-            throw new EmailAlreadyExistsException();
-        }
 
         return memberRepository.save(member);
     }
@@ -60,20 +61,37 @@ public class MemberService {
         return memberRepository.findByEmail(email).orElse(null);
     }
 
-    public Member updateMember(Member member) {
+    public String updateMember(MemberUpdateDto memberUpdateDto, String bearerToken) {
 
-        Optional<Member> existingMember = memberRepository.findById(member.getId());
-        if (existingMember.isPresent()) {
-            Member updateMember = existingMember.get();
-            updateMember.setEmail(member.getEmail());
-            updateMember.setUsername(member.getUsername());
-            updateMember.setNickname(member.getNickname());
-            updateMember.setPassword(member.getPassword());
-            return memberRepository.save(updateMember);
-        } else {
-            throw new MemberNotFoundException();
+        String token = bearerToken.split(" ")[1];
+        String tokenEmail = JwtUtil.getEmail(token, secretkey);
+
+        // 회원 존재 여부 체크
+        Member existingMember = memberRepository.findById(memberUpdateDto.getId()).orElseThrow(() -> new MemberNotFoundException());
+
+        // 이메일 중복 여부 체크
+        Optional<Member> existingEmailMember = memberRepository.findByEmail(memberUpdateDto.getEmail());
+        if (existingEmailMember.isPresent()) {
+            throw new EmailAlreadyExistsException();
         }
 
+        // 토큰 이메일과 업데이트될 이메일 비교
+        if(tokenEmail.equals(existingMember.getEmail())){
+            existingMember.setEmail(memberUpdateDto.getEmail());
+            existingMember.setUsername(memberUpdateDto.getUsername());
+            existingMember.setNickname(memberUpdateDto.getNickname());
+
+            // 비밀번호 암호화
+            String rawPassword = memberUpdateDto.getPassword();
+            String encodedPassword = passwordEncoder.encode(rawPassword);
+            existingMember.setPassword(encodedPassword);
+
+            memberRepository.save(existingMember);
+
+            return JwtUtil.createJwt(existingMember.getEmail(), existingMember.getUsername(), secretkey, expiredMs);
+        }else{
+            throw new UserMismatchException();
+        }
 
     }
 

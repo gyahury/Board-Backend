@@ -3,10 +3,10 @@ package com.bootpractice.board.controller;
 import com.bootpractice.board.domain.Member;
 import com.bootpractice.board.dto.MemberJoinDto;
 import com.bootpractice.board.dto.MemberLoginDto;
+import com.bootpractice.board.dto.MemberUpdateDto;
 import com.bootpractice.board.service.MemberService;
+import com.bootpractice.board.utils.ResponseUtil;
 import io.swagger.annotations.Api;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -33,14 +33,11 @@ public class MemberController {
             // 유효성 검사 에러의 첫번째 메세지 반환
             String firstErrorMessage = result.getAllErrors().get(0).getDefaultMessage();
 
-            return ResponseEntity.badRequest()
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE + ";charset=UTF-8")
-                    .body(firstErrorMessage);
+            return ResponseUtil.badRequestMessage(firstErrorMessage);
         }
 
-        Member joinMember = memberService.saveMember(memberDto);
-
-        return ResponseEntity.ok(joinMember);
+        memberService.saveMember(memberDto);
+        return ResponseUtil.successMessage("join process is complete");
     }
 
     @GetMapping
@@ -54,9 +51,9 @@ public class MemberController {
     }
 
     @PutMapping("/{id}")
-    public Member updateMember(@PathVariable Long id, @RequestBody Member member) {
-        member.setId(id);
-        return memberService.updateMember(member);
+    public ResponseEntity<?> updateMember(@PathVariable Long id, @Valid @RequestBody MemberUpdateDto memberUpdateDto, @RequestHeader("Authorization") String bearerToken) {
+        memberUpdateDto.setId(id);
+        return ResponseUtil.successMessageWithToken("update process is complete", memberService.updateMember(memberUpdateDto, bearerToken));
     }
 
     @DeleteMapping("/{id}")
@@ -65,8 +62,8 @@ public class MemberController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginMember(@RequestBody MemberLoginDto memberLoginDto){
-        return ResponseEntity.ok().body(memberService.loginMember(memberLoginDto));
+    public ResponseEntity<?> loginMember(@RequestBody MemberLoginDto memberLoginDto){
+        return ResponseUtil.successMessageWithToken("login process is complete", memberService.loginMember(memberLoginDto));
     }
 
 
