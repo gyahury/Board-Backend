@@ -50,9 +50,4 @@ public class Member {
         this.nickname = nickname;
         this.password = password;
     }
-
-    public Member(String email, String password) {
-        this.email = email;
-        this.password = password;
-    }
 }

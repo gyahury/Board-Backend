@@ -28,43 +28,41 @@ public class MemberController {
 
     @PostMapping("/join")
     public ResponseEntity<?> joinMember(@Valid @RequestBody MemberJoinDto memberDto, BindingResult result) {
-
         if (result.hasErrors()) {
             // 유효성 검사 에러의 첫번째 메세지 반환
             String firstErrorMessage = result.getAllErrors().get(0).getDefaultMessage();
-
             return ResponseUtil.badRequestMessage(firstErrorMessage);
         }
-
         memberService.saveMember(memberDto);
         return ResponseUtil.successMessage("join process is complete");
     }
 
     @GetMapping
-    public List<Member> getAllMembers() {
-        return memberService.findAllMembers();
+    public ResponseEntity<?> getAllMembers() {
+        return ResponseUtil.successMessage("getAllMembers process is complete",  memberService.findAllMembers());
     }
 
     @GetMapping("/{id}")
-    public Member getMemberById(@PathVariable Long id) {
-        return memberService.findMemberById(id);
+    public ResponseEntity<?> getMemberById(@PathVariable Long id) {
+        return ResponseUtil.successMessage("getMember process is complete",  memberService.findMemberById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateMember(@PathVariable Long id, @Valid @RequestBody MemberUpdateDto memberUpdateDto, @RequestHeader("Authorization") String bearerToken) {
+    public ResponseEntity<?> updateMember(@PathVariable Long id, @Valid @RequestBody MemberUpdateDto memberUpdateDto,
+                                          @RequestHeader("Authorization") String bearerToken) {
         memberUpdateDto.setId(id);
-        return ResponseUtil.successMessageWithToken("update process is complete", memberService.updateMember(memberUpdateDto, bearerToken));
+        return ResponseUtil.successMessage("update process is complete", memberService.updateMember(memberUpdateDto, bearerToken));
     }
 
     @DeleteMapping("/{id}")
-    public void deleteMember(@PathVariable Long id) {
+    public ResponseEntity<?> deleteMember(@PathVariable Long id) {
         memberService.deleteMember(id);
+        return ResponseUtil.successMessage("delete process is complete");
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginMember(@RequestBody MemberLoginDto memberLoginDto){
-        return ResponseUtil.successMessageWithToken("login process is complete", memberService.loginMember(memberLoginDto));
+        return ResponseUtil.successMessage("login process is complete", memberService.loginMember(memberLoginDto));
     }
-
 
 }
