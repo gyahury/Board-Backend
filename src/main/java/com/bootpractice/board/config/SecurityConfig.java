@@ -27,10 +27,9 @@ public class SecurityConfig {
         return http
                 .httpBasic().disable()
                 .csrf().disable()
-                .cors()
-                .and()
+                .cors().disable()
                 .authorizeRequests()
-                .antMatchers("/api/members/join", "/api/members/login").permitAll() // 가입과 로그인은 authorize없이 허용
+                .antMatchers("/api/member/join", "/api/member/login").permitAll() // 가입과 로그인은 authorize없이 허용
                 .antMatchers("/api/**").authenticated()
                 .and()
                 .sessionManagement()
