@@ -35,7 +35,7 @@ public class MemberService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public Member saveMember(MemberJoinDto memberJoinDto) {
+    public void saveMember(MemberJoinDto memberJoinDto) {
         Member member = memberJoinDto.toEntity();
 
         Optional<Member> existingMember = memberRepository.findByEmail(member.getEmail());
@@ -47,7 +47,7 @@ public class MemberService {
         String encodedPassword = passwordEncoder.encode(rawPassword);
         member.setPassword(encodedPassword);
 
-        return memberRepository.save(member);
+        memberRepository.save(member);
     }
 
     public List<Member> findAllMembers() {
