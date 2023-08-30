@@ -1,6 +1,5 @@
 package com.bootpractice.board.dto;
 
-import com.bootpractice.board.domain.Member;
 import lombok.Data;
 
 import javax.validation.constraints.Email;
