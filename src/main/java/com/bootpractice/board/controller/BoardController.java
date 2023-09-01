@@ -28,7 +28,7 @@ public class BoardController {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createBoard(@Valid @RequestBody BoardCreateDto boardCreateDto, Member member, BindingResult result,
+    public ResponseEntity<?> createBoard(@Valid @RequestBody BoardCreateDto boardCreateDto, BindingResult result,
                                          @RequestHeader("Authorization") String bearerToken){
 
         if (result.hasErrors()) {
